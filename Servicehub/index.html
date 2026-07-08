@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ServiceHub | Professional Home Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bright-lavender: #8b5cf6;
+            --deep-navy: #1e1b4b;
+            --soft-mint: #ecfdf5;
+            --soft-peach: #fff7ed;
+            --soft-yellow: #fefce8;
+        }
+
+        html { visibility: visible; opacity: 1; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #ffffff;
+            color: var(--deep-navy);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hero-bg {
+            background-color: var(--deep-navy);
+            padding: 60px 20px 120px;
+            text-align: center;
+            position: relative;
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            max-width: 600px;
+            margin: -45px auto 0;
+            padding: 8px 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 20;
+        }
+
+        .category-column {
+            border-radius: 24px;
+            padding: 32px 20px;
+            height: fit-content;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .service-img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background-color: #f3f4f6;
+        }
+
+        .service-item { transition: transform 0.2s ease; cursor: pointer; }
+        .service-item:hover { transform: translateY(-5px); }
+        .service-item:active { transform: scale(0.95); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal.active { display: flex; }
+
+        .hidden-services { display: none; }
+        .hidden-services.show { display: grid; animation: fadeIn 0.4s ease forwards; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .payment-option {
+            border: 2px solid #f3f4f6;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .payment-option:hover { border-color: var(--bright-lavender); background: #f5f3ff; }
+        .payment-option.selected { border-color: var(--bright-lavender); background: #f5f3ff; }
+
+        .no-scroll { overflow: hidden; }
+    </style>
+</head>
+<!-- Firebase SDK -->
+<body>
+
+    <!-- Header -->
+    <nav class="flex justify-between items-center px-6 py-4 bg-white sticky top-0 z-50 shadow-sm">
+    <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+            <div class="w-9 h-9 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">S</div>
+            <span class="text-xl font-extrabold tracking-tight">ServiceHub</span>
+        </div>
+
+        <!-- Location Selector -->
+        <select class="ml-4 bg-gray-100 px-3 py-2 rounded-xl font-semibold text-sm">
+            <option>📍 Chennai</option>
+            <option>📍 Bangalore</option>
+            <option>📍 Hyderabad</option>
+        </select>
+    </div>
+
+    <div class="hidden md:flex items-center gap-4">
+
+<button onclick="toggleAuth('login')" class="font-semibold">
+Login
+</button>
+
+<button onclick="toggleAuth('signup')" class="bg-violet-600 text-white px-5 py-2 rounded-full font-semibold">
+Sign Up
+</button>
+
+<button onclick="goToPage('mybookings.html')" 
+class="bg-violet-600 text-white px-5 py-2 rounded-full font-semibold">
+My Bookings
+</button>
+
+<button onclick="goToPage('profile.html')" 
+class="bg-violet-600 text-white px-5 py-2 rounded-full font-semibold">
+Profile
+</button>
+
+<button onclick="logout()" class="bg-gray-800 text-white px-5 py-2 rounded-full font-semibold">
+Logout
+</button>
+
+
+<button id="logoutBtn" onclick="logout()" class="hidden ..."></button>
+
+</div>
+</nav>
+
+    <!-- Hero -->
+    <div class="hero-bg">
+        <h2 class="text-orange-400 font-bold tracking-widest text-sm uppercase mb-4">Skilled • Trusted • Reliable</h2>
+        <h1 class="text-white text-4xl md:text-5xl font-extrabold leading-tight">Professional Services<br>At Your Doorstep</h1>
+    </div>
+    <!-- Search Section -->
+    <div class="search-container">
+    <div class="px-3 border-r border-gray-100">
+        🔍
+    </div>
+    <input type="text" id="searchInput" onkeyup="searchServices()" placeholder="Search for AC repair, cleaning, salon..." class="flex-1 px-4 py-3 outline-none text-gray-700 font-medium text-sm md:text-base">
+    <button onclick="searchServices()" class="bg-violet-600 text-white px-4 py-2 rounded-xl font-bold">
+        Search
+    </button>
+</div>
+
+    <!-- Main Categories -->
+    <section class="max-w-6xl mx-auto px-4 mt-16 mb-24">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            
+            <!-- Home & Maintenance -->
+            <div class="category-column" style="background-color: var(--soft-mint)">
+                <h3 class="text-center font-bold text-lg mb-8 uppercase tracking-widest text-emerald-900">Maintenance</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8 justify-items-center">
+                    
+                   
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Interiors','https://images.unsplash.com/photo-1581578731548-c64695cc6958?w=400')">
+                        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?w=128&q=80" class="service-img" alt="Interiors">
+                        <span class="text-xs font-bold text-emerald-800">Interiors</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Electrician', 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400')">
+                        <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=128&q=80" class="service-img" alt="Electric">
+                        <span class="text-xs font-bold text-emerald-800">Electrician</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Plumbing', 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400')">
+                        <img src="https://images.unsplash.com/photo-1504148455328-c376907d081c?w=128&q=80" class="service-img" alt="Plumbing">
+                        <span class="text-xs font-bold text-emerald-800">Plumbing</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('AC Repair', 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=400')">
+                        <img src="https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=128&q=80" class="service-img" alt="AC">
+                        <span class="text-xs font-bold text-emerald-800">AC Repair</span>
+                    </div>
+                </div>
+                <div class="hidden-services grid grid-cols-2 gap-y-8 mt-8" id="home-extra">
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Painting','https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=400')">
+                        <img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=128&q=80" class="service-img" alt="Painting">
+                        <span class="text-xs font-bold text-emerald-800">Painting</span>
+                    </div>
+                </div>
+                <button onclick="showMore('home')" id="home-btn" class="mt-10 text-violet-600 font-bold text-sm mx-auto hover:underline">View All</button>
+            </div>
+
+            <!-- Education & Personal -->
+            <div class="category-column" style="background-color: var(--soft-peach)">
+                <h3 class="text-center font-bold text-lg mb-8 uppercase tracking-widest text-orange-900">Personal</h3>
+                <div class="grid grid-cols-2 gap-y-8">
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Salon', 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400')">
+                        <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=128&q=80" class="service-img" alt="Salon">
+                        <span class="text-xs font-bold text-orange-800">Salon</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Yoga','https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400')">
+                        <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=128&q=80" class="service-img" alt="Yoga">
+                        <span class="text-xs font-bold text-orange-800">Yoga</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Tuitions', 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400')">
+                        <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=128&q=80" class="service-img" alt="Tutor">
+                        <span class="text-xs font-bold text-orange-800">Tuitions</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Massage', 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400')">
+                        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=128&q=80" class="service-img" alt="Spa">
+                        <span class="text-xs font-bold text-orange-800">Massage</span>
+                    </div>
+                </div>
+                <button onclick="showMore('personal')" id="personal-btn" class="mt-10 text-violet-600 font-bold text-sm mx-auto hover:underline">View All</button>
+            </div>
+
+            <!-- Lifestyle -->
+            <div class="category-column" style="background-color: var(--soft-yellow)">
+                <h3 class="text-center font-bold text-lg mb-8 uppercase tracking-widest text-yellow-900">Lifestyle</h3>
+                <div class="grid grid-cols-2 gap-y-8">
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Cleaning', 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400')">
+                        <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=128&q=80" class="service-img" alt="Clean">
+                        <span class="text-xs font-bold text-yellow-800">Cleaning</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Pest Control', 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400')">
+                        <img src="https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=128&q=80" class="service-img" alt="Pest">
+                        <span class="text-xs font-bold text-yellow-800">Pest Control</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Tech Support', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=400')">
+                        <img src="https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=128&q=80" class="service-img" alt="Laptop">
+                        <span class="text-xs font-bold text-yellow-800">Tech Support</span>
+                    </div>
+                    <div class="service-item flex flex-col items-center gap-2" onclick="openService('Financial', 'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=400')">
+                        <img src="https://images.unsplash.com/photo-1556742111-a301076d9d18?w=128&q=80" class="service-img" alt="Finance">
+                        <span class="text-xs font-bold text-yellow-800">Financial</span>
+                    </div>
+                </div>
+                <button onclick="showMore('life')" id="life-btn" class="mt-10 text-violet-600 font-bold text-sm mx-auto hover:underline">View All</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Detail Modal -->
+    <div id="serviceModal" class="modal" onclick="closeModal('serviceModal')">
+        <div class="bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden relative" onclick="event.stopPropagation()">
+            <img id="modalImg" src="" class="w-full h-48 object-cover">
+            <div class="p-8"><p class="text-yellow-500 font-bold mb-4">⭐ 4.8 Rated Service</p>
+                <h2 id="modalTitle" class="text-3xl font-extrabold mb-2"></h2>
+                <p id="modalDesc" class="text-gray-500 mb-6 font-medium"></p>
+                
+                <div class="flex items-center justify-between mb-8 bg-gray-50 p-4 rounded-2xl">
+                    <span class="text-gray-400 font-bold uppercase tracking-widest text-xs">Estimated Cost</span>
+                    <span id="modalPrice" class="text-2xl font-extrabold text-violet-600"></span>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="closeModal('serviceModal')" class="flex-1 bg-gray-100 text-gray-700 py-4 rounded-2xl font-bold">Cancel</button>
+                    <button onclick="goToPayment()" class="flex-[2] bg-violet-600 text-white py-4 rounded-2xl font-extrabold uppercase tracking-widest shadow-lg shadow-violet-200">Book Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal" onclick="closeModal('paymentModal')">
+        <div class="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="text-center mb-8">
+                <div class="w-16 h-1 bg-gray-100 mx-auto rounded-full mb-6"></div>
+                <h2 class="text-3xl font-extrabold mb-2">Checkout</h2>
+                <p id="payAmount" class="text-gray-400 font-bold text-sm"></p>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="payment-option p-5 rounded-3xl flex items-center justify-between selected" onclick="selectPayment(this)">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 font-bold">UPI</div>
+                        <span class="font-bold">UPI (PhonePe, GPay)</span>
+                    </div>
+                    <div class="w-5 h-5 rounded-full border-4 border-violet-600"></div>
+                </div>
+                <div class="payment-option p-5 rounded-3xl flex items-center justify-between" onclick="selectPayment(this)">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-bold">CC</div>
+                        <span class="font-bold">Card Payment</span>
+                    </div>
+                    <div class="w-5 h-5 rounded-full border-2 border-gray-200"></div>
+                </div>
+            </div>
+
+            <button onclick="processPayment()" class="w-full bg-violet-600 text-white py-5 rounded-[2rem] font-extrabold uppercase tracking-widest shadow-xl shadow-violet-200 hover:scale-[1.02] active:scale-95 transition-all">
+                Pay Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal" onclick="closeModal('authModal')">
+        <div class="bg-white w-full max-w-sm rounded-[32px] p-10 shadow-2xl" onclick="event.stopPropagation()">
+            <div id="authContent"></div>
+        </div>
+    </div>
+
+    <div id="subServiceModal" class="modal" onclick="closeModal('subServiceModal')">
+  <div class="bg-white w-full max-w-lg rounded-3xl p-6" onclick="event.stopPropagation()">
+    
+    <h2 id="serviceTitle" class="text-2xl font-bold mb-4"></h2>
+
+    <div id="subServiceList" class="space-y-3"></div>
+
+  </div>
+</div>
+
+    <div class="max-w-4xl mx-auto p-6">
+<form id="bookingForm" class="bg-white shadow-xl rounded-2xl p-6 space-y-4">
+
+<h2 class="text-xl font-bold text-violet-700">Book a Service</h2>
+
+<input class="w-full border p-3 rounded-lg"
+type="text" id="name" placeholder="Your Name" required>
+
+<input class="w-full border p-3 rounded-lg"
+type="text" id="service" placeholder="Service Type" required>
+
+<input class="w-full border p-3 rounded-lg"
+type="date" id="date" required>
+
+<input class="w-full border p-3 rounded-lg"
+type="time" id="time" required>
+
+<button class="w-full bg-violet-600 text-white py-3 rounded-xl font-bold"
+type="submit">
+Book Service
+</button>
+
+</form>
+
+
+ <script type="module">
+
+// Firebase Imports
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { 
+getAuth,
+sendSignInLinkToEmail,
+isSignInWithEmailLink,
+signInWithEmailLink,
+GoogleAuthProvider,
+signInWithPopup
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { 
+getFirestore,
+collection,
+addDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { doc, setDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { signOut } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDaU6O2PsK71P6BzfjPBjk0_aT4Oeby5HA",
+  authDomain: "servicehub-app-82d26.firebaseapp.com",
+  projectId: "servicehub-app-82d26",
+  storageBucket: "servicehub-app-82d26.firebasestorage.app",
+  messagingSenderId: "453789517777",
+  appId: "1:453789517777:web:3bff9a1589552c2bd902f0",
+  measurementId: "G-XGC89MQJRV"
+};
+
+// Initialize
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const servicesData = {
+
+  Salon: [
+    { name: "Men Haircut", price: 299 },
+    { name: "Women Haircut", price: 499 },
+    { name: "Kids Haircut", price: 199 },
+    { name: "Facial", price: 699 },
+    { name: "Hair Spa", price: 899 }
+  ],
+
+  Interiors: [
+    { name: "2BHK Interior Design", price: 4999 },
+    { name: "3BHK Interior Design", price: 7999 },
+    { name: "Modular Kitchen", price: 9999 },
+    { name: "Wardrobe Design", price: 3999 }
+  ],
+
+  Electrician: [
+    { name: "Fan Repair", price: 199 },
+    { name: "Switch Repair", price: 149 },
+    { name: "Wiring", price: 499 },
+    { name: "Light Installation", price: 249 }
+  ],
+
+  Plumbing: [
+    { name: "Leak Fix", price: 199 },
+    { name: "Tap Installation", price: 249 },
+    { name: "Pipe Repair", price: 399 },
+    { name: "Bathroom Fitting", price: 699 }
+  ],
+
+  "AC Repair": [
+    { name: "General Service", price: 599 },
+    { name: "Gas Refill", price: 1999 },
+    { name: "Cooling Issue Fix", price: 899 },
+    { name: "Installation", price: 1499 }
+  ],
+
+  Painting: [
+    { name: "Wall Painting", price: 1999 },
+    { name: "Texture Painting", price: 2999 },
+    { name: "Full Home Paint", price: 9999 }
+  ],
+
+  Cleaning: [
+    { name: "Full Home Cleaning", price: 1499 },
+    { name: "Bathroom Cleaning", price: 499 },
+    { name: "Kitchen Cleaning", price: 599 },
+    { name: "Sofa Cleaning", price: 699 }
+  ],
+
+  Yoga: [
+    { name: "Personal Yoga Session", price: 500 },
+    { name: "Weight Loss Program", price: 1200 },
+    { name: "Meditation Class", price: 400 }
+  ],
+
+  Tuitions: [
+    { name: "Math Tuition", price: 300 },
+    { name: "Science Tuition", price: 300 },
+    { name: "English Coaching", price: 250 },
+    { name: "Exam Preparation", price: 500 }
+  ],
+
+  Massage: [
+    { name: "Full Body Massage", price: 1200 },
+    { name: "Head Massage", price: 400 },
+    { name: "Foot Massage", price: 300 },
+    { name: "Spa Therapy", price: 1500 }
+  ],
+
+  "Pest Control": [
+    { name: "Cockroach Control", price: 699 },
+    { name: "Mosquito Control", price: 599 },
+    { name: "Termite Treatment", price: 1999 }
+  ],
+
+  "Tech Support": [
+    { name: "Laptop Repair", price: 499 },
+    { name: "Mobile Repair", price: 399 },
+    { name: "Software Install", price: 299 },
+    { name: "WiFi Setup", price: 199 }
+  ],
+
+  Financial: [
+    { name: "Tax Filing", price: 999 },
+    { name: "Loan Consultation", price: 499 },
+    { name: "Investment Advice", price: 799 }
+  ]
+
+};
+
+let selectedService = {};
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    currentUser = user;
+  }
+});
+
+
+// COMPLETE EMAIL LINK SIGN IN
+if (isSignInWithEmailLink(auth, window.location.href)) {
+
+  let email = localStorage.getItem("emailForSignIn");
+
+  if (!email) {
+    email = prompt("Please enter your email for confirmation");
+  }
+
+  signInWithEmailLink(auth, email, window.location.href)
+  .then((result) => {
+
+    localStorage.removeItem("emailForSignIn");
+
+    alert("Login Successful!");
+    console.log("User:", result.user);
+
+  })
+  .catch((error) => {
+    console.error(error);
+  });
+
+}
+
+window.toggleAuth = function(mode){
+
+const modal = document.getElementById("authModal");
+const content = document.getElementById("authContent");
+
+modal.classList.add("active");
+document.body.classList.add("no-scroll");
+
+content.innerHTML = `
+<h2 class="text-2xl font-bold mb-6">
+${mode === "signup" ? "Create Account" : "Login"}
+</h2>
+
+<input
+type="email"
+id="email"
+placeholder="Enter your email"
+class="w-full border p-3 rounded-lg mb-4"
+/>
+
+<button
+onclick="sendEmailLink()"
+class="w-full bg-violet-600 text-white py-3 rounded-xl font-bold"
+>
+${mode === "signup" ? "Sign Up" : "Send Login Link"}
+</button>
+
+<button
+id="googleLoginBtn"
+class="w-full bg-red-500 text-white py-3 rounded-xl font-bold mt-4"
+>
+Sign in with Google
+</button>
+`;
+
+const btn = document.getElementById("googleLoginBtn");
+
+btn.addEventListener("click", async () => {
+
+try{
+
+const provider = new GoogleAuthProvider();
+
+const result = await signInWithPopup(auth, provider);
+
+const user = result.user;
+
+alert("Welcome " + user.displayName);
+
+console.log(user);
+
+closeModal("authModal");
+
+}catch(error){
+
+console.error(error);
+
+alert("Google Login Failed");
+
+}
+
+});
+
+}
+
+// SEARCH
+window.searchServices = function(){
+const input = document.getElementById("searchInput").value.toLowerCase();
+const services = document.querySelectorAll(".service-item");
+
+services.forEach(service=>{
+const text = service.innerText.toLowerCase();
+service.style.display = text.includes(input) ? "flex" : "none";
+});
+};
+
+
+// SERVICE SELECT
+window.selectService = function(subName, mainService, price){
+
+  // ✅ store selected service
+  selectedService = {
+    service: mainService,
+    subService: subName,
+    price: price
+  };
+
+  document.getElementById("modalTitle").innerText = subName;
+  document.getElementById("modalDesc").innerText = mainService;
+  document.getElementById("modalPrice").innerText = "₹"+price;
+
+  // auto fill form
+  document.getElementById("service").value = subName;
+
+  closeModal("subServiceModal");
+
+  document.getElementById("serviceModal").classList.add("active");
+}
+window.openService = function(serviceName){
+
+  const modal = document.getElementById("subServiceModal");
+  const list = document.getElementById("subServiceList");
+
+  document.getElementById("serviceTitle").innerText = serviceName;
+
+  list.innerHTML = "";
+
+  const services = servicesData[serviceName];
+
+  services.forEach(s => {
+    list.innerHTML += `
+      <div class="flex justify-between items-center p-4 border rounded-xl">
+        <div>
+          <p class="font-bold">${s.name}</p>
+          <p class="text-sm text-gray-500">₹${s.price}</p>
+        </div>
+        <button onclick="selectService('${s.name}','${serviceName}',${s.price})"
+          class="bg-violet-600 text-white px-4 py-2 rounded-lg">
+          Book
+        </button>
+      </div>
+    `;
+  });
+
+  modal.classList.add("active");
+}
+
+
+// VIEW MORE
+window.showMore = function(id){
+
+const section = document.getElementById(id+"-extra");
+const btn = document.getElementById(id+"-btn");
+
+section.classList.toggle("show");
+
+btn.innerText = section.classList.contains("show")
+? "View Less"
+: "View All";
+
+};
+
+
+// GO TO PAYMENT
+window.goToPayment = function(){
+
+document.getElementById("serviceModal").classList.remove("active");
+document.getElementById("paymentModal").classList.add("active");
+
+const price = document.getElementById("modalPrice").innerText;
+document.getElementById("payAmount").innerText = "Amount: "+price;
+
+};
+
+window.goToPage = function(page){
+  window.location.href = page;
+}
+
+
+// PAYMENT OPTION
+window.selectPayment = function(el){
+
+document.querySelectorAll(".payment-option")
+.forEach(opt=>opt.classList.remove("selected"));
+
+el.classList.add("selected");
+
+};
+
+
+// PROCESS PAYMENT
+window.processPayment = function(){
+
+alert("Payment Successful 🎉");
+
+closeModal("paymentModal");
+
+};
+
+
+// CLOSE MODAL
+window.closeModal = function(id){
+
+document.getElementById(id).classList.remove("active");
+document.body.classList.remove("no-scroll");
+
+};
+
+
+// EMAIL LOGIN
+window.sendEmailLink = function(){
+
+const email = document.getElementById("email").value;
+
+if(!email){
+alert("Enter email");
+return;
+}
+
+const actionCodeSettings = {
+url: window.location.origin,
+handleCodeInApp: true
+};
+
+sendSignInLinkToEmail(auth,email,actionCodeSettings)
+.then(()=>{
+localStorage.setItem("emailForSignIn",email);
+alert("Login link sent!");
+})
+.catch(err=>{
+alert(err.message);
+});
+
+};
+
+// LOGOUT
+window.logout = function(){
+  signOut(auth)
+    .then(() => {
+      alert("Logged out successfully");
+      window.location.reload();
+    })
+    .catch((error) => {
+      console.error(error);
+      alert("Logout failed");
+    });
+}
+
+
+
+// BOOKING FORM
+
+document.getElementById("bookingForm")
+.addEventListener("submit", async function(e){
+
+  e.preventDefault();
+
+  const name = document.getElementById("name").value;
+  const date = document.getElementById("date").value;
+  const time = document.getElementById("time").value;
+
+  const user = auth.currentUser;
+
+  if(!user){
+    alert("Please login first");
+    return;
+  }
+
+  if(!selectedService.service){
+    alert("Please select a service first");
+    return;
+  }
+
+  try{
+
+    await addDoc(collection(db,"bookings"),{
+
+  name: name,
+
+  service: selectedService.service,
+  subService: selectedService.subService,
+  price: selectedService.price,
+
+  date: date,
+  time: time,
+
+  status: "Pending",          // 🔥 booking status
+
+  technician: "",             // 👨‍🔧 will be added by admin
+  techPhone: "",              // 📞 will be added later
+
+  payment: "Pending",         // 💳 payment status
+
+  userId: user.uid,
+
+  createdAt: new Date()
+
+});
+
+    alert("Booking Saved Successfully 🎉");
+
+    document.getElementById("bookingForm").reset();
+
+  }catch(err){
+    console.log(err);
+    alert("Error saving booking");
+  }
+
+});
+
+
+</script>

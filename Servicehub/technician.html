@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Technician Panel</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#ddd6ff;
+}
+
+.container{
+width:80%;
+margin:auto;
+}
+
+.job-card{
+background:white;
+padding:20px;
+margin:20px 0;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+button{
+padding:8px 15px;
+border:none;
+background:#6c4dff;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Technician Jobs</h2>
+
+<div id="jobs"></div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs,
+updateDoc,
+doc
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDaU6O2PsK71P6BzfjPBjk0_aT4Oeby5HA",
+  authDomain: "servicehub-app-82d26.firebaseapp.com",
+  projectId: "servicehub-app-82d26",
+  storageBucket: "servicehub-app-82d26.firebasestorage.app",
+  messagingSenderId: "453789517777",
+  appId: "1:453789517777:web:3bff9a1589552c2bd902f0",
+  measurementId: "G-XGC89MQJRV"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const jobsContainer = document.getElementById("jobs");
+
+async function loadJobs(){
+
+const querySnapshot = await getDocs(collection(db,"bookings"));
+
+jobsContainer.innerHTML="";
+
+querySnapshot.forEach((docSnap)=>{
+
+const data = docSnap.data();
+
+jobsContainer.innerHTML += `
+
+<div class="job-card">
+
+<h3>${data.service}</h3>
+
+<p>Customer: ${data.name}</p>
+<p>Date: ${data.date}</p>
+<p>Time: ${data.time}</p>
+<p>Status: ${data.status}</p>
+
+<button onclick="completeJob('${docSnap.id}')">
+Mark Completed
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.completeJob = async function(id){
+
+await updateDoc(doc(db,"bookings",id),{
+
+status:"Completed"
+
+});
+
+alert("Job Completed");
+
+loadJobs();
+
+}
+
+loadJobs();
+</script>
+
+</body>
+</html>

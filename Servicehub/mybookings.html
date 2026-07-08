@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Bookings</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+<!-- Navbar -->
+<nav class="bg-violet-200 text-black p-4 flex justify-between items-center shadow">
+    <h1 class="text-xl font-bold">ServiceHub</h1>
+
+    <a href="index.html" 
+    class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200">
+        ⬅ Home
+    </a>
+</nav>
+
+<div id="loading" class="text-center mt-10">Loading...</div>
+
+<!-- Page Title -->
+<div id="content" style="display:none;" class="max-w-5xl mx-auto mt-10 px-4">
+
+<h2 class="text-3xl font-bold mb-6 text-gray-800">
+My Bookings
+</h2>
+
+<!-- Booking Container -->
+<div id="bookingList" class="grid md:grid-cols-2 gap-6 bg-violet-200 text-black p-6 rounded-xl"></div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDaU6O2PsK71P6BzfjPBjk0_aT4Oeby5HA",
+  authDomain: "servicehub-app-82d26.firebaseapp.com",
+  projectId: "servicehub-app-82d26",
+  storageBucket: "servicehub-app-82d26.firebasestorage.app",
+  messagingSenderId: "453789517777",
+  appId: "1:453789517777:web:3bff9a1589552c2bd902f0",
+  measurementId: "G-XGC89MQJRV"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// 🔥 LOAD BOOKINGS
+
+function loadBookings(uid){
+
+  const q = query(
+    collection(db,"bookings"),
+    where("userId","==",uid)
+  );
+
+  onSnapshot(q, (querySnapshot)=>{
+
+    const bookingList = document.getElementById("bookingList");
+    console.log("Real-time update triggered");
+
+    bookingList.innerHTML = "";
+
+    if(querySnapshot.empty){
+      bookingList.innerHTML = `
+        <div class="text-gray-500 text-lg">
+          No bookings found.
+        </div>
+      `;
+      return;
+    }
+
+    querySnapshot.forEach((doc)=>{
+
+      const data = doc.data();
+
+      let statusColor = "bg-yellow-400";
+
+      if(data.status==="Completed") statusColor="bg-green-500";
+      if(data.status==="Cancelled") statusColor="bg-red-500";
+      if(data.status==="Assigned") statusColor="bg-blue-500";
+
+      bookingList.innerHTML += `
+        <div class="bg-violet-400 rounded-xl shadow-lg p-6 hover:shadow-xl transition">
+
+          <h3 class="text-xl font-semibold text-indigo-600 mb-2">
+            ${data.service}
+          </h3>
+
+          <p class="text-gray-600">📅 Date: ${data.date}</p>
+          <p class="text-gray-600">⏰ Time: ${data.time}</p>
+
+          <p>👨‍🔧 Technician: ${data.technician || "Not Assigned"}</p>
+          <p>📞 Phone: ${data.techPhone || "-"}</p>
+          <p>💰 Price: ₹${data.price || "-"}</p>
+          <p>🧾 Category: ${data.subService || "-"}</p>
+          <p>💳 Payment: ${data.payment || "Pending"}</p>
+
+          <div class="mt-4">
+            <span class="${statusColor} text-white px-3 py-1 rounded-full text-sm">
+              ${data.status}
+            </span>
+          </div>
+
+        </div>
+      `;
+    });
+
+  });
+
+}
+</script>
+
+</body>
+</html>
